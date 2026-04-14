@@ -3,6 +3,7 @@ import { Lock, Unlock, Shield, Zap } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
 import MatrixInput from "@/components/MatrixInput";
 import ImageDisplay from "@/components/ImageDisplay";
+import MatrixDisplay from "@/components/MatrixDisplay";
 import MathExplanation from "@/components/MathExplanation";
 import {
   type Matrix3x3,
@@ -17,6 +18,7 @@ const Index = () => {
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [encryptedImageData, setEncryptedImageData] = useState<ImageData | null>(null);
   const [decryptedImageData, setDecryptedImageData] = useState<ImageData | null>(null);
+  const [pastedEncryptedData, setPastedEncryptedData] = useState<ImageData | null>(null);
   const [keyMatrix, setKeyMatrix] = useState<Matrix3x3>(
     DEFAULT_KEY.map((r) => [...r]) as Matrix3x3
   );
@@ -52,6 +54,18 @@ const Index = () => {
       setProcessing(false);
     }, 50);
   }, [encryptedImageData, keyMatrix]);
+
+  const handlePastedDecrypt = useCallback((pastedData: ImageData) => {
+    const inv = inverseMatrix(keyMatrix);
+    if (!inv) return;
+    setProcessing(true);
+    setTimeout(() => {
+      const decrypted = processImage(pastedData, inv);
+      setPastedEncryptedData(decrypted);
+      setDecryptedImageData(decrypted);
+      setProcessing(false);
+    }, 50);
+  }, [keyMatrix]);
 
   return (
     <div className="min-h-screen bg-background matrix-grid-bg">
@@ -130,8 +144,15 @@ const Index = () => {
         {originalImageData && (
           <div className="grid md:grid-cols-3 gap-6">
             <ImageDisplay title="Original" imageData={originalImageData} label="Upload an image" />
-            <ImageDisplay title="Encrypted" imageData={encryptedImageData} label="Click Encrypt" />
+            <MatrixDisplay title="Encrypted (Matrix Form)" imageData={encryptedImageData} onPasteDecrypt={handlePastedDecrypt} />
             <ImageDisplay title="Decrypted" imageData={decryptedImageData} label="Click Decrypt" />
+          </div>
+        )}
+
+        {pastedEncryptedData && (
+          <div className="mt-4 p-4 border border-primary/30 rounded-lg bg-primary/5">
+            <p className="text-sm text-primary font-medium mb-2">Pasted & Decrypted Result:</p>
+            <ImageDisplay title="Pasted Encrypted (Decrypted)" imageData={pastedEncryptedData} />
           </div>
         )}
 
